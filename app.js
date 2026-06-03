@@ -1,4 +1,24 @@
-const STORAGE_KEY = "luma-finance-prototype";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInAnonymously,
+  signInWithPopup,
+  signOut,
+  updateProfile
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const LEGACY_STORAGE_KEYS = ["luma-finance-prototype"];
+const FIREBASE_REQUIRED_KEYS = ["apiKey", "authDomain", "projectId", "appId"];
 
 const today = new Date("2026-06-02T12:00:00");
 const monthKey = "2026-06";
@@ -52,83 +72,40 @@ const DEFAULT_CATEGORY_ICONS = {
 };
 const CHART_TONES = ["blue", "purple", "green", "amber", "pink", "cyan", "lime", "coral"];
 
-const demoState = {
+const initialState = {
   user: null,
-  incomeUsd: 1575.83,
+  incomeUsd: 0,
   incomes: [],
-  expenses: [
-    { id: crypto.randomUUID(), detail: "Galicia", category: "Tarjetas", amountArs: 268605.36, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Naranja", category: "Tarjetas", amountArs: 360556, dueDate: "2026-06-02", status: "Abonado" },
-    { id: crypto.randomUUID(), detail: "ML", category: "Prestamos", amountArs: 186909, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Uala", category: "Prestamos", amountArs: 23367, dueDate: "2026-06-08", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Brubank", category: "Prestamos", amountArs: 173969, dueDate: "2026-06-05", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Alquiler", category: "Casa", amountArs: 140000, dueDate: "2026-06-02", status: "Abonado" },
-    { id: crypto.randomUUID(), detail: "Luz", category: "Casa", amountArs: 44800, dueDate: "2026-06-02", status: "Abonado" },
-    { id: crypto.randomUUID(), detail: "Luz 2", category: "Casa", amountArs: 33239, dueDate: "2026-06-17", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Internet", category: "Casa", amountArs: 91000, dueDate: "2026-06-10", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Agua", category: "Casa", amountArs: 19000, dueDate: "2026-06-08", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Swiss Medical", category: "Seguros y salud", amountArs: 207000, dueDate: "2026-06-10", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Rentas", category: "Seguros y salud", amountArs: 30000, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Seguro Auto", category: "Seguros y salud", amountArs: 75000, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Gimnasio", category: "Seguros y salud", amountArs: 36000, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "PINTURA", category: "Seguros y salud", amountArs: 60000, dueDate: "2026-06-02", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Apple One", category: "Otros", amountArs: 18109, dueDate: "2026-06-01", status: "Abonado" },
-    { id: crypto.randomUUID(), detail: "Google Fotos", category: "Otros", amountArs: 18181.8, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "iCloud+", category: "Otros", amountArs: 18181.8, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Regalos", category: "Otros", amountArs: 80000, dueDate: "2026-06-01", status: "Pendiente" },
-    { id: crypto.randomUUID(), detail: "Compu", category: "Otros", currency: "USD", amountOriginal: 156.67, amountArs: 219338, dueDate: "2026-06-15", status: "Pendiente" }
-  ],
-  rates: [
-    { id: crypto.randomUUID(), date: "2026-06-01", rate: 1400 },
-    { id: crypto.randomUUID(), date: "2026-06-02", rate: 1468.6 },
-    { id: crypto.randomUUID(), date: "2026-06-05", rate: 1400 },
-    { id: crypto.randomUUID(), date: "2026-06-08", rate: 1400 },
-    { id: crypto.randomUUID(), date: "2026-06-10", rate: 1400 },
-    { id: crypto.randomUUID(), date: "2026-06-17", rate: 1400 }
-  ],
-  freelo: [
-    { id: crypto.randomUUID(), task: "Revision de Nuevo Proyecto", project: "Alianza", date: "2026-05-05", start: "19:00", end: "20:00", hours: 1 },
-    { id: crypto.randomUUID(), task: "UXUI - Rediseño Webflow", project: "Asesuisa", date: "2026-05-26", start: "21:00", end: "00:00", hours: 3 },
-    { id: crypto.randomUUID(), task: "Construccion propuesta", project: "Asesuisa", date: "2026-05-13", start: "20:00", end: "22:00", hours: 2 }
-  ],
-  projects: [
-    { name: "Asesuisa", active: true },
-    { name: "Alianza", active: true }
-  ],
-  categories: [
-    { name: "Tarjetas", icon: "fa-credit-card" },
-    { name: "Prestamos", icon: "fa-money-bill-transfer" },
-    { name: "Casa", icon: "fa-house" },
-    { name: "Seguros y salud", icon: "fa-heart-pulse" },
-    { name: "Otros", icon: "fa-box" }
-  ],
+  expenses: [],
+  rates: [],
+  freelo: [],
+  projects: [],
+  categories: [],
   expenseFilter: "all",
   statsMode: "usd"
 };
 
-let state = loadState();
+let state = normalizeState(clone(initialState));
 let selectedFreeloId = null;
 let selectedExpenseId = null;
 let selectedIncomeId = null;
 let isEditingExpense = false;
 let isEditingIncome = false;
 let selectedNewCategoryIcon = CATEGORY_ICON_OPTIONS[0].icon;
+let activeCategoryPickerName = null;
+let firebaseApp = null;
+let auth = null;
+let db = null;
+let currentUser = null;
+let authReady = false;
+let pendingLoginProfile = null;
+let saveTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
-}
-
-function loadState() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return normalizeState(clone(demoState));
-  try {
-    return normalizeState({ ...clone(demoState), ...JSON.parse(stored) });
-  } catch {
-    return normalizeState(clone(demoState));
-  }
 }
 
 function normalizeState(nextState) {
@@ -195,11 +172,11 @@ function freeloIncomeAmount(entries = state.freelo, hourlyRate = FRELO_RATE_USD)
 function materializeFixedIncomes(nextState) {
   const previousKey = previousMonthKey();
   const defaults = [
-    { type: "first_half", date: monthDate(previousKey, 15), amountOriginal: 750, currency: "USD" },
-    { type: "first_discount", date: monthDate(previousKey, 15), amountOriginal: -156.67, currency: "USD" },
-    { type: "second_half", date: monthDate(monthKey, 1), amountOriginal: 750, currency: "USD" },
+    { type: "first_half", date: monthDate(previousKey, 15), amountOriginal: 0, currency: "USD" },
+    { type: "first_discount", date: monthDate(previousKey, 15), amountOriginal: 0, currency: "USD" },
+    { type: "second_half", date: monthDate(monthKey, 1), amountOriginal: 0, currency: "USD" },
     { type: "second_discount", date: monthDate(monthKey, 1), amountOriginal: 0, currency: "USD" },
-    { type: "health", date: monthDate(monthKey, 1), amountOriginal: 50, currency: "USD" },
+    { type: "health", date: monthDate(monthKey, 1), amountOriginal: 0, currency: "USD" },
     {
       type: "freelo",
       date: monthDate(monthKey, 15),
@@ -275,7 +252,9 @@ function normalizeCategory(category) {
     return { name, icon: DEFAULT_CATEGORY_ICONS[name] || "fa-tag" };
   }
   const name = category.name?.trim();
-  return { name, icon: category.icon || DEFAULT_CATEGORY_ICONS[name] || "fa-tag" };
+  const knownIcons = CATEGORY_ICON_OPTIONS.map((option) => option.icon);
+  const icon = knownIcons.includes(category.icon) ? category.icon : DEFAULT_CATEGORY_ICONS[name] || CATEGORY_ICON_OPTIONS[0].icon;
+  return { name, icon };
 }
 
 function uniqueCategories(categories) {
@@ -299,8 +278,132 @@ function chartTone(index) {
   return CHART_TONES[index % CHART_TONES.length];
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function hasFirebaseConfig() {
+  return FIREBASE_REQUIRED_KEYS.every((key) => Boolean(firebaseConfig?.[key]));
+}
+
+function cleanupLegacyStorage() {
+  try {
+    LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // The app no longer depends on local storage.
+  }
+}
+
+function userDocRef(user = currentUser) {
+  if (!db || !user) return null;
+  return doc(db, "users", user.uid);
+}
+
+function profileFromFirebaseUser(user) {
+  return {
+    name: user.displayName || user.email?.split("@")[0] || "Usuario",
+    email: user.email || pendingLoginProfile?.email || "usuario@email.com"
+  };
+}
+
+async function loadRemoteState(user) {
+  const profile = pendingLoginProfile || profileFromFirebaseUser(user);
+  const snapshot = await getDoc(userDocRef(user));
+  const remoteState = snapshot.exists() ? snapshot.data().state : null;
+  state = normalizeState({
+    ...clone(initialState),
+    ...(remoteState || {}),
+    user: remoteState?.user || profile
+  });
+  if (pendingLoginProfile || !remoteState) await saveState({ immediate: true });
+  pendingLoginProfile = null;
+}
+
+function saveState(options = {}) {
+  return saveRemoteState(options);
+}
+
+function saveRemoteState(options = {}) {
+  if (!currentUser || !db) return Promise.resolve();
+  clearTimeout(saveTimer);
+  const write = async () => {
+    await setDoc(userDocRef(), {
+      state: clone(state),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  };
+  if (options.immediate) return write();
+  saveTimer = setTimeout(() => {
+    write().catch((error) => console.error("No se pudo guardar en Firestore", error));
+  }, 250);
+  return Promise.resolve();
+}
+
+async function loginUser(name, email) {
+  if (!auth) {
+    alert("Falta configurar Firebase para poder ingresar.");
+    return;
+  }
+  pendingLoginProfile = {
+    name: name.trim() || "Usuario",
+    email: email.trim() || "usuario@email.com"
+  };
+  const credential = await signInAnonymously(auth);
+  if (pendingLoginProfile.name) {
+    await updateProfile(credential.user, { displayName: pendingLoginProfile.name });
+  }
+}
+
+async function loginWithGoogle() {
+  if (!auth) {
+    alert("Falta configurar Firebase para poder ingresar.");
+    return;
+  }
+  pendingLoginProfile = null;
+  await signInWithPopup(auth, new GoogleAuthProvider());
+}
+
+async function logoutUser() {
+  if (auth) await signOut(auth);
+  currentUser = null;
+  pendingLoginProfile = null;
+  state = normalizeState(clone(initialState));
+  render();
+}
+
+function initFirebase() {
+  cleanupLegacyStorage();
+
+  if (!hasFirebaseConfig()) {
+    console.warn("Firebase no esta configurado. Completa firebase-config.js para activar Auth y Firestore.");
+    authReady = true;
+    render();
+    return;
+  }
+
+  firebaseApp = initializeApp(firebaseConfig);
+  auth = getAuth(firebaseApp);
+  db = getFirestore(firebaseApp);
+
+  onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+
+    if (!user) {
+      state = normalizeState(clone(initialState));
+      authReady = true;
+      render();
+      return;
+    }
+
+    try {
+      await loadRemoteState(user);
+    } catch (error) {
+      console.error("No se pudo cargar Firestore", error);
+      state = normalizeState({
+        ...clone(initialState),
+        user: profileFromFirebaseUser(user)
+      });
+    }
+
+    authReady = true;
+    render();
+  });
 }
 
 function formatArs(value) {
@@ -338,11 +441,11 @@ function dayDiff(date) {
 function getRateFor(date) {
   const orderedRates = [...state.rates].sort((a, b) => a.date.localeCompare(b.date));
   const exactOrPrevious = orderedRates.filter((rate) => rate.date <= date).at(-1);
-  return exactOrPrevious?.rate || orderedRates[0]?.rate || 1400;
+  return exactOrPrevious?.rate || orderedRates[0]?.rate || 1;
 }
 
 function latestRate() {
-  return [...state.rates].sort((a, b) => a.date.localeCompare(b.date)).at(-1)?.rate || 1400;
+  return [...state.rates].sort((a, b) => a.date.localeCompare(b.date)).at(-1)?.rate || 1;
 }
 
 function effectiveRate(expense) {
@@ -444,7 +547,7 @@ function incomeTotals() {
   return { totalArs, totalUsd };
 }
 
-function initials(name = "Meli") {
+function initials(name = "Usuario") {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
@@ -468,7 +571,7 @@ function showView(target) {
 }
 
 function render() {
-  if (!state.user) {
+  if (!authReady || !state.user) {
     $("#loginScreen").classList.add("active");
     $("#appShell").hidden = true;
     return;
@@ -503,7 +606,7 @@ function renderExpenseDetail() {
 
 function renderDashboard() {
   const t = totals();
-  const avgRate = state.rates.reduce((sum, item) => sum + item.rate, 0) / state.rates.length;
+  const avgRate = state.rates.length ? state.rates.reduce((sum, item) => sum + item.rate, 0) / state.rates.length : 0;
   const incomeUsdTotal = Math.max(t.income.totalUsd, 1);
   const percent = Math.max(0, Math.min(100, Math.round((t.availableUsd / incomeUsdTotal) * 100)));
   const nextDue = [...t.pending].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0];
@@ -781,11 +884,13 @@ function catalogListMarkup(type, items) {
     return items.map((item) => `
       <article class="settings-item category-item">
         <div class="category-item-head">
-          <span class="category-icon-pill"><i class="fa-solid ${item.icon}"></i></span>
+          <button class="category-icon-pill category-icon-toggle" type="button" data-category-picker-toggle="${escapeHtml(item.name)}" aria-label="Cambiar icono de ${escapeHtml(item.name)}">
+            <i class="fa-solid ${item.icon}"></i>
+          </button>
           <input value="${escapeHtml(item.name)}" data-catalog-edit="${type}" data-original="${escapeHtml(item.name)}" aria-label="Editar ${escapeHtml(item.name)}">
           <button class="delete-btn" data-catalog-delete="${type}" data-value="${escapeHtml(item.name)}" aria-label="Eliminar"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        ${categoryIconPickerMarkup(item.icon, { action: "edit", name: item.name })}
+        ${activeCategoryPickerName === item.name ? categoryIconPickerMarkup(item.icon, { action: "edit", name: item.name }) : ""}
       </article>
     `).join("") || emptyState("No hay items cargados.");
   }
@@ -1065,7 +1170,7 @@ function addCatalogItem(type, name) {
     if (state.projects.some((project) => project.name.toLowerCase() === cleaned.toLowerCase())) return;
     state.projects.push({ name: cleaned, active: true });
   } else {
-    const icon = $("#categoryIconSelect")?.value || DEFAULT_CATEGORY_ICONS[cleaned] || "fa-tag";
+    const icon = selectedNewCategoryIcon || DEFAULT_CATEGORY_ICONS[cleaned] || CATEGORY_ICON_OPTIONS[0].icon;
     if (state.categories.some((item) => item.name.toLowerCase() === cleaned.toLowerCase())) return;
     state.categories.push({ name: cleaned, icon });
   }
@@ -1108,6 +1213,7 @@ function deleteCatalogItem(type, value) {
 
 function updateCategoryIcon(name, icon) {
   state.categories = state.categories.map((category) => category.name === name ? { ...category, icon } : category);
+  activeCategoryPickerName = null;
   saveState();
   render();
 }
@@ -1126,7 +1232,8 @@ function handleCatalogSubmit(event, type) {
   const form = event.currentTarget;
   addCatalogItem(type, form.elements.name.value);
   form.reset();
-  if (form.elements.icon) form.elements.icon.value = CATEGORY_ICON_OPTIONS[0].icon;
+  if (type === "category") selectedNewCategoryIcon = CATEGORY_ICON_OPTIONS[0].icon;
+  renderCatalogs();
 }
 
 function exportBackup() {
@@ -1203,6 +1310,24 @@ document.addEventListener("click", (event) => {
 
   const closeButton = event.target.closest("[data-close]");
   if (closeButton) closeModal(closeButton.dataset.close);
+
+  const newCategoryIcon = event.target.closest("[data-new-category-icon]");
+  if (newCategoryIcon) {
+    selectedNewCategoryIcon = newCategoryIcon.dataset.icon;
+    renderCatalogs();
+  }
+
+  const categoryIconChoice = event.target.closest("[data-category-icon-choice]");
+  if (categoryIconChoice) {
+    updateCategoryIcon(categoryIconChoice.dataset.categoryIconChoice, categoryIconChoice.dataset.icon);
+  }
+
+  const categoryPickerToggle = event.target.closest("[data-category-picker-toggle]");
+  if (categoryPickerToggle) {
+    const name = categoryPickerToggle.dataset.categoryPickerToggle;
+    activeCategoryPickerName = activeCategoryPickerName === name ? null : name;
+    renderCatalogs();
+  }
 
   const detailTarget = event.target.closest("[data-expense-detail]");
   if (detailTarget) {
@@ -1319,12 +1444,6 @@ document.addEventListener("change", (event) => {
     return;
   }
 
-  const categoryIconEdit = event.target.closest("[data-category-icon]");
-  if (categoryIconEdit) {
-    updateCategoryIcon(categoryIconEdit.dataset.categoryIcon, categoryIconEdit.value);
-    return;
-  }
-
   const catalogEdit = event.target.closest("[data-catalog-edit]");
   if (!catalogEdit) return;
   renameCatalogItem(catalogEdit.dataset.catalogEdit, catalogEdit.dataset.original, catalogEdit.value);
@@ -1409,18 +1528,13 @@ document.addEventListener("submit", (event) => {
 
 $("#loginForm").addEventListener("submit", (event) => {
   event.preventDefault();
-  state.user = {
-    name: $("#loginName").value.trim() || "Meli",
-    email: $("#loginEmail").value.trim() || "meli@email.com"
-  };
-  saveState();
-  render();
+  loginUser($("#loginName").value, $("#loginEmail").value)
+    .catch((error) => alert(`No se pudo ingresar: ${error.message}`));
 });
 
 $("#googleLogin").addEventListener("click", () => {
-  state.user = { name: "Meli", email: "meli@gmail.com" };
-  saveState();
-  render();
+  loginWithGoogle()
+    .catch((error) => alert(`No se pudo ingresar con Google: ${error.message}`));
 });
 
 $("#expenseFilter").addEventListener("click", (event) => {
@@ -1553,9 +1667,8 @@ $("#notificationsBtn").addEventListener("click", () => {
 $("#exportBtn").addEventListener("click", exportBackup);
 
 $("#logoutBtn").addEventListener("click", () => {
-  state.user = null;
-  saveState();
-  render();
+  logoutUser()
+    .catch((error) => alert(`No se pudo cerrar sesion: ${error.message}`));
 });
 
 $$("dialog").forEach((dialog) => {
@@ -1569,6 +1682,6 @@ $("#expenseForm").elements.currency.value = "ARS";
 $("#incomeForm").elements.date.value = monthDate(monthKey, 1);
 $("#incomeForm").elements.currency.value = "ARS";
 $("#dollarForm").elements.date.value = "2026-06-02";
-$("#dollarForm").elements.rate.value = getRateFor("2026-06-02");
+$("#dollarForm").elements.rate.value = latestRate();
 
-render();
+initFirebase();

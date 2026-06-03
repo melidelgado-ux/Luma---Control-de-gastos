@@ -12,22 +12,22 @@
       <section class="phone" aria-label="App Luma">
         <section class="login-screen active" id="loginScreen">
           <div class="login-brand">
-            <div class="avatar big">MD</div>
-            <p class="eyebrow">Firebase Auth + Firestore ready</p>
+            <div class="avatar big">L</div>
+            <p class="eyebrow">Tu plata, sin vueltas</p>
             <h1>Luma</h1>
-            <p>Gastos, vencimientos, freelo, dolar y exportacion para Sheets.</p>
+            <p>Gastos, ingresos, freelo y dólar en un solo lugar. Menos planilla, más control.</p>
           </div>
-          <form class="login-form glass" id="loginForm">
+          <form class="login-form glass" id="loginForm" novalidate>
             <label>
-              Nombre
-              <input id="loginName" autocomplete="name" value="Meli">
+              Cómo te llamamos
+              <input id="loginName" autocomplete="name" placeholder="Tu nombre o apodo">
             </label>
             <label>
               Email
-              <input id="loginEmail" type="email" autocomplete="email" value="meli@email.com">
+              <input id="loginEmail" type="email" autocomplete="email" placeholder="donde guardar tu tablero">
             </label>
-            <button class="primary-btn" type="submit">Entrar</button>
-            <button class="ghost-btn" type="button" id="googleLogin">Continuar con Google</button>
+            <button class="primary-btn" type="submit">Entrar a mi tablero</button>
+            <button class="ghost-btn" type="button" id="googleLogin">Seguir con Google</button>
           </form>
         </section>
 
@@ -35,9 +35,9 @@
           <div class="app-screen view active" data-view="home">
             <header class="topbar">
               <div class="user-pill">
-                <div class="avatar" id="userInitials">MD</div>
+                <div class="avatar" id="userInitials">U</div>
                 <div>
-                  <p class="eyebrow" id="helloText">Hola, Meli</p>
+                  <p class="eyebrow" id="helloText">Hola</p>
                   <h1 id="monthTitle">Junio 2026</h1>
                 </div>
               </div>
@@ -260,8 +260,8 @@
             </header>
             <section class="login-card glass in-app-profile">
               <p class="eyebrow">Prototipo funcional</p>
-              <h2 id="profileName">Meli</h2>
-              <p id="profileEmail">meli@email.com</p>
+              <h2 id="profileName">Usuario</h2>
+              <p id="profileEmail">usuario@email.com</p>
             </section>
 
             <section class="settings-card glass">
@@ -366,7 +366,7 @@
         </div>
         <label>
           Detalle
-          <input name="detail" required placeholder="Internet">
+          <input name="detail" required placeholder="Detalle del gasto">
         </label>
         <label>
           Categoria
@@ -497,6 +497,6 @@
       <div class="payment-list" id="noticeList"></div>
     </dialog>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

@@ -1227,7 +1227,12 @@ select option {
 }
 
 #categoryForm {
-  grid-template-columns: 118px 1fr 46px;
+  grid-template-columns: 1fr 54px;
+  align-items: start;
+}
+
+#categoryForm .icon-picker {
+  grid-column: 1 / -1;
 }
 
 .settings-list {
@@ -1243,17 +1248,66 @@ select option {
 }
 
 .category-item {
-  grid-template-columns: 42px 92px 1fr auto;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.category-item-head {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
 }
 
 .category-icon-pill {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   place-items: center;
+  border: 0;
   border-radius: 14px;
-  background: rgba(51, 226, 255, 0.12);
+  background: linear-gradient(135deg, rgba(51, 226, 255, 0.22), rgba(120, 255, 46, 0.12));
+  color: #fff;
+  font-size: 17px;
+}
+
+.category-icon-toggle {
+  cursor: pointer;
+}
+
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.icon-choice {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   color: var(--cyan);
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 18px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.icon-choice.active {
+  border-color: rgba(255, 255, 255, 0.52);
+  color: #06101c;
+  background: linear-gradient(135deg, var(--lime), var(--cyan));
+  box-shadow: 0 12px 26px rgba(31, 129, 255, 0.28);
+}
+
+.icon-choice:active {
+  transform: scale(0.96);
 }
 
 .settings-item input {
@@ -1596,8 +1650,24 @@ select option {
     grid-template-columns: 1fr;
   }
 
+  .category-item-head {
+    grid-template-columns: 48px minmax(0, 1fr) 44px;
+  }
+
   .category-icon-pill {
-    display: none;
+    display: grid;
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .icon-choice {
+    border-radius: 18px;
+    font-size: 20px;
   }
 
   .payment-item,
