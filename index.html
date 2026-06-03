@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Luma - Control de gastos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="phone" aria-label="App Luma">
+        <section class="login-screen active" id="loginScreen">
+          <div class="login-brand">
+            <div class="avatar big">MD</div>
+            <p class="eyebrow">Firebase Auth + Firestore ready</p>
+            <h1>Luma</h1>
+            <p>Gastos, vencimientos, freelo, dolar y exportacion para Sheets.</p>
+          </div>
+          <form class="login-form glass" id="loginForm">
+            <label>
+              Nombre
+              <input id="loginName" autocomplete="name" value="Meli">
+            </label>
+            <label>
+              Email
+              <input id="loginEmail" type="email" autocomplete="email" value="meli@email.com">
+            </label>
+            <button class="primary-btn" type="submit">Entrar</button>
+            <button class="ghost-btn" type="button" id="googleLogin">Continuar con Google</button>
+          </form>
+        </section>
+
+        <section class="app" id="appShell" hidden>
+          <div class="app-screen view active" data-view="home">
+            <header class="topbar">
+              <div class="user-pill">
+                <div class="avatar" id="userInitials">MD</div>
+                <div>
+                  <p class="eyebrow" id="helloText">Hola, Meli</p>
+                  <h1 id="monthTitle">Junio 2026</h1>
+                </div>
+              </div>
+              <div class="top-actions">
+                <button class="icon-btn" id="notificationsBtn" aria-label="Notificaciones">
+                  <span class="dot" id="notificationDot"></span>
+                  <i class="fa-solid fa-bell"></i>
+                </button>
+              </div>
+            </header>
+
+            <section class="hero-card glass">
+              <div class="hero-copy">
+                <p>Queda disponible</p>
+                <strong id="availableUsd">US$ 0,00</strong>
+                <span id="availableArs">$ 0 ARS estimado</span>
+              </div>
+              <div class="orb-meter" id="orbMeter">
+                <div class="meter-core">
+                  <span id="freePercent">0%</span>
+                  <small>libre</small>
+                </div>
+              </div>
+            </section>
+
+            <section class="quick-actions">
+              <button data-action="expense"><span><i class="fa-solid fa-plus"></i></span>Gasto</button>
+              <button data-action="dollar"><span><i class="fa-solid fa-dollar-sign"></i></span>Cotización</button>
+              <button data-action="freelo"><span><i class="fa-solid fa-clock"></i></span>Freelo</button>
+            </section>
+
+            <section class="metric-grid">
+              <article class="metric-card glass">
+                <span>Total a pagar</span>
+                <strong id="totalArs">$0</strong>
+                <small id="totalUsd">US$ 0,00</small>
+              </article>
+              <article class="metric-card glass paid">
+                <span>Ya abonado</span>
+                <strong id="paidArs">$0</strong>
+                <small id="paidCount">0 pagos</small>
+              </article>
+              <article class="metric-card glass warning">
+                <span>Falta pagar</span>
+                <strong id="pendingArs">$0</strong>
+                <small id="nextDueText">sin vencimientos</small>
+              </article>
+              <article class="metric-card glass danger">
+                <span>Vencidos</span>
+                <strong id="overdueCount">0</strong>
+                <small>revisar hoy</small>
+              </article>
+            </section>
+
+            <section class="panel">
+              <div class="section-title">
+                <h2>Próximos pagos</h2>
+                <button data-action="pending-expenses">Ver todo</button>
+              </div>
+              <div class="payment-list" id="upcomingList"></div>
+            </section>
+          </div>
+
+          <div class="app-screen view" data-view="notices">
+            <header class="page-header">
+              <button class="icon-btn" data-target="home" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Avisos</h1>
+              <span class="header-spacer" aria-hidden="true"></span>
+            </header>
+            <section class="payment-list" id="noticePageList"></section>
+          </div>
+
+          <div class="app-screen view" data-view="expenses">
+            <header class="page-header">
+              <button class="icon-btn" data-target="home" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Gastos</h1>
+              <button class="icon-btn" data-action="expense" aria-label="Agregar"><i class="fa-solid fa-plus"></i></button>
+            </header>
+            <section class="segment" id="expenseFilter">
+              <button class="active" data-filter="all">Todos</button>
+              <button data-filter="Pendiente">Pendientes</button>
+              <button data-filter="Abonado">Abonados</button>
+            </section>
+            <section class="category-total glass">
+              <p id="expensesSummaryLabel">Falta pagar</p>
+              <strong id="expensesPendingTotal">$0</strong>
+              <span id="expensesPendingUsd">US$ 0,00</span>
+            </section>
+            <section class="expense-groups" id="expenseGroups"></section>
+          </div>
+
+          <div class="app-screen view" data-view="incomes">
+            <header class="page-header">
+              <button class="icon-btn" data-target="home" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Ingresos</h1>
+              <button class="icon-btn" data-action="income" aria-label="Agregar ingreso"><i class="fa-solid fa-plus"></i></button>
+            </header>
+            <section class="category-total glass income-total">
+              <p>Total ingresado</p>
+              <strong id="incomeTotalPrimary">$0</strong>
+              <span id="incomeTotalSecondary">US$ 0,00</span>
+            </section>
+            <section class="payment-list" id="incomeList"></section>
+          </div>
+
+          <div class="app-screen view" data-view="incomeDetail">
+            <header class="detail-page-header">
+              <div class="detail-topbar">
+                <button class="icon-btn" data-target="incomes" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="detail-icon-actions">
+                  <button class="icon-btn" id="incomeHeaderEditBtn" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
+                  <button class="icon-btn danger-icon" id="incomeHeaderDeleteBtn" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              <h1 id="incomeDetailTitle">Ingreso</h1>
+            </header>
+            <div class="detail-body page-detail-body" id="incomeDetailBody"></div>
+          </div>
+
+          <div class="app-screen view" data-view="expenseDetail">
+            <header class="detail-page-header">
+              <div class="detail-topbar">
+                <button class="icon-btn" data-target="expenses" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="detail-icon-actions">
+                  <button class="icon-btn" id="expenseHeaderEditBtn" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
+                  <button class="icon-btn danger-icon" id="expenseHeaderDeleteBtn" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              <h1 id="detailTitle">Detalle</h1>
+            </header>
+            <div class="detail-body page-detail-body" id="expenseDetailBody"></div>
+          </div>
+
+          <div class="app-screen view" data-view="freelo">
+            <header class="page-header">
+              <button class="icon-btn" data-target="home" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Freelo</h1>
+              <button class="icon-btn" data-action="freelo" aria-label="Agregar horas"><i class="fa-solid fa-plus"></i></button>
+            </header>
+            <section class="freelo-card glass">
+              <p>Horas del periodo</p>
+              <strong id="freeloHours">0 h</strong>
+              <span>A cobrar aprox. el 15 del mes siguiente</span>
+              <div class="freelo-total" id="freeloUsd">US$ 0,00</div>
+            </section>
+            <section class="payment-list" id="freeloList"></section>
+          </div>
+
+          <div class="app-screen view" data-view="freeloDetail">
+            <header class="detail-page-header">
+              <div class="detail-topbar">
+                <button class="icon-btn" data-target="freelo" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="detail-icon-actions">
+                  <button class="icon-btn danger-icon" id="freeloHeaderDeleteBtn" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              <h1>Detalle Freelo</h1>
+            </header>
+            <section class="freelo-card glass">
+              <p>Horas cargadas</p>
+              <strong id="freeloDetailHours">0 h</strong>
+              <span id="freeloDetailUsd">US$ 0,00</span>
+            </section>
+            <form class="form-card glass" id="freeloDetailForm">
+              <label>
+                Ticket / tarea
+                <input name="task" required>
+              </label>
+              <label>
+                Proyecto
+                <select name="project" id="freeloDetailProjectSelect" required></select>
+              </label>
+              <label>
+                Fecha
+                <input name="date" type="date" required>
+              </label>
+              <div class="time-grid">
+                <label>
+                  Inicio
+                  <input name="start" type="time" required>
+                </label>
+                <label>
+                  Fin
+                  <input name="end" type="time" required>
+                </label>
+              </div>
+              <div class="form-actions">
+                <button class="primary-btn" type="submit">Guardar</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="app-screen view" data-view="stats">
+            <header class="page-header">
+              <button class="icon-btn" data-target="profile" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Estadísticas</h1>
+              <span class="header-spacer" aria-hidden="true"></span>
+            </header>
+            <section class="segment" id="statsMode">
+              <button data-mode="ars">ARS</button>
+              <button class="active" data-mode="usd">USD</button>
+              <button data-mode="freelo">Freelo</button>
+            </section>
+            <section class="chart-card glass">
+              <div>
+                <p id="chartLabel">Gastos por categoría</p>
+                <strong id="chartTotal">US$ 0,00</strong>
+              </div>
+              <div class="bars" id="bars" aria-label="Gráfico de categorías"></div>
+              <div class="bar-labels" id="barLabels"></div>
+            </section>
+            <section class="payment-list stats-list" id="statsList"></section>
+          </div>
+
+          <div class="app-screen view" data-view="profile">
+            <header class="page-header">
+              <button class="icon-btn" data-target="home" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Perfil</h1>
+              <span class="header-spacer" aria-hidden="true"></span>
+            </header>
+            <section class="login-card glass in-app-profile">
+              <p class="eyebrow">Prototipo funcional</p>
+              <h2 id="profileName">Meli</h2>
+              <p id="profileEmail">meli@email.com</p>
+            </section>
+
+            <section class="settings-card glass">
+              <button class="settings-link" data-target="stats">
+                <span>
+                  <strong>Estadísticas</strong>
+                  <small>Gastos por categoría y Freelo</small>
+                </span>
+                <em><i class="fa-solid fa-chevron-right"></i></em>
+              </button>
+              <button class="settings-link" data-target="projects">
+                <span>
+                  <strong>Proyectos Freelo</strong>
+                  <small>Editar, pausar y reactivar</small>
+                </span>
+                <em><i class="fa-solid fa-chevron-right"></i></em>
+              </button>
+              <button class="settings-link" data-target="categories">
+                <span>
+                  <strong>Categorías de gastos</strong>
+                  <small>Crear, renombrar y eliminar</small>
+                </span>
+                <em><i class="fa-solid fa-chevron-right"></i></em>
+              </button>
+            </section>
+
+            <section class="settings-card glass profile-actions-card">
+              <button class="google-btn" id="exportBtn">Descargar backup para Sheets</button>
+              <button class="logout-btn" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+            </section>
+          </div>
+
+          <div class="app-screen view" data-view="projects">
+            <header class="page-header">
+              <button class="icon-btn" data-target="profile" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Proyectos</h1>
+            </header>
+            <section class="settings-card glass">
+              <div class="section-title">
+                <h2>Proyectos Freelo</h2>
+              </div>
+              <form class="inline-form" id="projectForm">
+                <input name="name" placeholder="Nuevo proyecto" required>
+                <button class="icon-btn" type="submit" aria-label="Agregar proyecto"><i class="fa-solid fa-plus"></i></button>
+              </form>
+              <div class="settings-list" id="projectList"></div>
+            </section>
+          </div>
+
+          <div class="app-screen view" data-view="categories">
+            <header class="page-header">
+              <button class="icon-btn" data-target="profile" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button>
+              <h1>Categorías</h1>
+            </header>
+            <section class="settings-card glass">
+              <div class="section-title">
+                <h2>Categorías de gastos</h2>
+              </div>
+              <form class="inline-form" id="categoryForm">
+                <input name="name" placeholder="Nueva categoría" required>
+                <div class="icon-picker" id="categoryIconPicker" aria-label="Elegir icono de categoría"></div>
+                <button class="icon-btn" type="submit" aria-label="Agregar categoría"><i class="fa-solid fa-plus"></i></button>
+              </form>
+              <div class="settings-list" id="categoryList"></div>
+            </section>
+          </div>
+
+          <nav class="bottom-nav" aria-label="Navegacion principal">
+            <button class="active" data-target="home"><span><i class="fa-solid fa-house"></i></span>Inicio</button>
+            <button data-target="expenses"><span><i class="fa-solid fa-wallet"></i></span>Gastos</button>
+            <button data-target="incomes"><span><i class="fa-solid fa-sack-dollar"></i></span>Ingresos</button>
+            <button data-target="freelo"><span><i class="fa-solid fa-clock"></i></span>Freelo</button>
+            <button data-target="profile"><span><i class="fa-solid fa-user"></i></span>Perfil</button>
+          </nav>
+        </section>
+      </section>
+
+      <aside class="desktop-preview">
+        <div class="login-card glass">
+          <p class="eyebrow">Luma</p>
+          <h2>Control vivo</h2>
+          <p>Este prototipo ya permite navegar, cargar gastos, marcar pagos, sumar horas freelance y descargar datos para Google Sheets.</p>
+          <button class="google-btn" data-action="expense">Agregar gasto</button>
+          <button class="ghost-btn" data-target="profile">Ir a perfil</button>
+        </div>
+
+        <div class="desktop-panel glass">
+          <div>
+            <p>Base futura</p>
+            <strong>Firestore</strong>
+          </div>
+          <button data-target="profile">Ver perfil</button>
+        </div>
+      </aside>
+    </main>
+
+    <dialog class="modal glass" id="expenseModal">
+      <form id="expenseForm" method="dialog">
+        <div class="modal-head">
+          <h2>Nuevo gasto</h2>
+          <button type="button" class="icon-btn modal-close" data-close="expenseModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <label>
+          Detalle
+          <input name="detail" required placeholder="Internet">
+        </label>
+        <label>
+          Categoria
+          <select name="category" id="expenseCategorySelect" required></select>
+        </label>
+        <div class="time-grid">
+          <label>
+            Moneda
+            <select name="currency">
+              <option value="ARS">ARS</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <label>
+            Monto
+            <input name="amount" type="number" min="0" step="0.01" required>
+          </label>
+        </div>
+        <label>
+            Vence
+            <input name="dueDate" type="date" required>
+        </label>
+        <label>
+          Estado
+          <select name="status">
+            <option>Pendiente</option>
+            <option>Abonado</option>
+          </select>
+        </label>
+        <label class="switch-row">
+          <span>
+            <strong>Recurrente</strong>
+            <small>Precargar en meses posteriores</small>
+          </span>
+          <input name="recurring" type="checkbox">
+          <i aria-hidden="true"></i>
+        </label>
+        <button class="primary-btn" type="submit">Guardar gasto</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal glass" id="dollarModal">
+      <form id="dollarForm" method="dialog">
+        <div class="modal-head">
+          <h2>Cargar dolar</h2>
+          <button type="button" class="icon-btn modal-close" data-close="dollarModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <label>
+          Fecha
+          <input name="date" type="date" required>
+        </label>
+        <label>
+          Cotización
+          <input name="rate" type="number" min="1" step="0.01" required>
+        </label>
+        <button class="primary-btn" type="submit">Guardar cotización</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal glass" id="freeloModal">
+      <form id="freeloForm" method="dialog">
+        <div class="modal-head">
+          <h2>Cargar horas</h2>
+          <button type="button" class="icon-btn modal-close" data-close="freeloModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <label>
+          Ticket / tarea
+          <input name="task" required>
+        </label>
+        <label>
+          Proyecto
+          <select name="project" id="freeloProjectSelect" required></select>
+        </label>
+        <label>
+          Fecha
+          <input name="date" type="date" required>
+        </label>
+        <div class="time-grid">
+          <label>
+            Inicio
+            <input name="start" type="time" required value="21:00">
+          </label>
+          <label>
+            Fin
+            <input name="end" type="time" required value="23:00">
+          </label>
+        </div>
+        <button class="primary-btn" type="submit">Guardar horas</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal glass" id="incomeModal">
+      <form id="incomeForm" method="dialog">
+        <div class="modal-head">
+          <h2>Ingreso extra</h2>
+          <button type="button" class="icon-btn modal-close" data-close="incomeModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <label>
+          Descripción
+          <input name="detail" required>
+        </label>
+        <div class="time-grid">
+          <label>
+            Moneda
+            <select name="currency">
+              <option value="ARS">ARS</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <label>
+            Monto
+            <input name="amount" type="number" step="0.01" required>
+          </label>
+        </div>
+        <label>
+          Fecha de pago
+          <input name="date" type="date" required>
+        </label>
+        <button class="primary-btn" type="submit">Guardar ingreso</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal glass" id="noticeModal">
+      <div class="modal-head">
+        <h2>Avisos</h2>
+        <button type="button" class="icon-btn modal-close" data-close="noticeModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="payment-list" id="noticeList"></div>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
